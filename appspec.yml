@@ -1,20 +1,22 @@
-version: 0.0.1
-
+version: 0.0
 os: linux
-runtime: python3.9
-
+files:
+  - source: /
+    destination: /opt/odoo/odoo/custom_addons
 hooks:
   BeforeInstall:
-    - execute:
-        command: |
-          sudo /etc/init.d/odoo-server stop
-          git clone https://github.com/arfaqkhna96/airzoglobal.git /opt/odoo/odoo/custom_modules
-
-  AfterDeploy:
-    - execute:
-        command: |
-          sudo /etc/init.d/odoo-server start
-
-deploy:
-  local_files:
-    - {}
+    - location: scripts/stop.sh
+      timeout: 300
+      runas: ubuntu
+  AfterInstall:
+    - location: scripts/update.sh
+      timeout: 300
+      runas: ubuntu
+  ApplicationStart:
+    - location: scripts/start.sh
+      timeout: 300
+      runas: ubuntu
+  ValidateService:
+    - location: scripts/validate.sh
+      timeout: 300
+      runas: ubuntu
