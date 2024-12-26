@@ -6,14 +6,48 @@ runtime: python3.9
 hooks:
   BeforeInstall:
     - execute:
+        # Indicate the start of the deployment
         command: |
-          sudo /etc/init.d/odoo-server stop
-          git clone https://github.com/arfaqkhna96/airzoglobal.git /opt/odoo/odoo/custom_modules
+          echo "Deployment started"
+        # Change to the repository directory and pull the latest changes
+        command: |
+          if [ -d /opt/odoo/odoo/custom_modules ]; then
+            cd /opt/odoo/odoo/custom_modules
+            git pull https://github.com/arfaqkhna96/custom_modules.git
+          else
+            git clone https://github.com/arfaqkhna96/custom_modules.git /opt/odoo/odoo/custom_modules
+          fi
 
-  AfterDeploy:
+  AfterInstall:
     - execute:
+        # Notify that installation is complete
+        command: |
+          echo "Application files installed"
+
+  ApplicationStart:
+    - execute:
+        # Start the Odoo server
         command: |
           sudo /etc/init.d/odoo-server start
+        # Confirm the server is running
+        command: |
+          if sudo /etc/init.d/odoo-server status | grep "running"; then
+            echo "Odoo server started successfully"
+          else
+            echo "Odoo server failed to start"
+          fi
+
+  ValidateService:
+    - execute:
+        # Perform a simple health check
+        command: |
+          STATUS_CODE=$(curl --write-out %{http_code} --silent --output /dev/null http://localhost:8069)
+          if [ "$STATUS_CODE" -ne 200 ]; then
+            echo "Health check failed"
+            exit 1
+          else
+            echo "Health check succeeded"
+          fi
 
 deploy:
   local_files:
